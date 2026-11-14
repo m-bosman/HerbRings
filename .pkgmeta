@@ -1,0 +1,13 @@
+package-as: HerbRings
+
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
+
+ignore:
+  - .github
+  - .gitignore
+  - README.md
+  - Media/mkicon.py
+  - Media/icon_preview.png
+  - Media/logo_400.png

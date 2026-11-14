@@ -209,6 +209,7 @@ local function Build()
 	local title = Text(c, "GameFontNormalHuge", "HerbRings")
 	title:SetPoint("TOPLEFT", 16, y)
 	local ver = (C_AddOns and C_AddOns.GetAddOnMetadata or GetAddOnMetadata)(ADDON, "Version") or ""
+	if ver:find("@", 1, true) then ver = "dev" end -- unpackaged checkout
 	local sub = Text(c, "GameFontDisableSmall", "v" .. ver .. "   /hrings help for slash commands")
 	sub:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -4)
 	y = y - 52

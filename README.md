@@ -1,3 +1,5 @@
+<p align="center"><img src="Media/logo_400.png" width="160" alt="HerbRings"></p>
+
 # HerbRings
 
 Puts a coloured ring on every herb spawn point on your minimap, coloured by how likely you are to get a skill-up from it. Made for WoW: Forever.

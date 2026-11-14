@@ -2,7 +2,7 @@
 ## Title: HerbRings
 ## Notes: Herb spawn points on the minimap, coloured by skill-up chance. Needs Questie.
 ## Author: marijn
-## Version: 0.7.2
+## Version: @project-version@
 ## OptionalDeps: Questie, QuestieDB
 ## SavedVariables: HerbRingsDB
 ## IconTexture: Interface\AddOns\HerbRings\Media\Icon.tga
