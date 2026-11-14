@@ -8,6 +8,7 @@ ignore:
   - .github
   - .gitignore
   - README.md
+  - AGENTS.md
   - Media/mkicon.py
   - Media/icon_preview.png
   - Media/logo_400.png
