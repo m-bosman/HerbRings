@@ -21,6 +21,8 @@ The rings show where herbs *can* spawn, not what's up right now. Forever doesn't
 
 **Questie.** Spawn points come from its database, which includes Forever's new spawns. Without it you only get the tooltip colouring.
 
+Now and then a herb grows where Questie has no spawn point. When you pick one there, HerbRings saves the spot and puts a ring on it from then on. Saved spots are shared by all your characters. `/hrings forget` removes the ones near you.
+
 ## Settings
 
 Esc > Options > AddOns > HerbRings, or `/hrings config`.

@@ -17,6 +17,7 @@ local DEFAULTS = {
 	showUnknown = true,
 	tooltip     = true,  -- colour herb names in world tooltips
 	ringTooltip = true,  -- hovering a ring shows its herb and skill-up chance
+	useFinds    = true,  -- save herbs you pick at spots Questie doesn't have, and show them
 	debug       = false,
 	size        = 12,    -- ring size in pixels
 	alpha       = 0.9,
@@ -244,6 +245,9 @@ local function Refresh(force)
 	end
 end
 
+-- Re-read the spawn data on the next refresh (own finds changed).
+function ns.Rescan() dirty = true end
+
 -- Full rebuild (after settings / skill changes): new colours, sizes, visibility.
 local function Rebuild()
 	ClearRings()
@@ -384,6 +388,111 @@ local function HookTooltips()
 end
 
 ---------------------------------------------------------------------------
+-- Own finds: a herb picked where no known spot is gets saved as a spot
+---------------------------------------------------------------------------
+local FIND_YARDS = 25   -- a pick this close to a known spot of the same herb is that spot
+local FORGET_YARDS = 40 -- /hrings forget removes own finds this close to you
+local pendingCast       -- { id, guid } of a Herb Gathering cast in progress
+
+local function PlayerPos()
+	local x, y, zone = HBD:GetPlayerZonePosition()
+	if not (x and y and zone) then return end
+	local w, h = HBD:GetZoneSize(zone)
+	if not w or w == 0 then return end
+	return x, y, zone, w, h
+end
+
+local function RecordFind(id)
+	if not (db.useFinds and id and ns.HERBS[id]) then return end
+	local x, y, zone, w, h = PlayerPos()
+	if not x then return end
+	local r2 = FIND_YARDS * FIND_YARDS
+	for _, s in ipairs((ns.CollectZone(zone, w, h))) do -- includes earlier own finds
+		local dx, dy = (s.x - x) * w, (s.y - y) * h
+		if s.id == id and dx * dx + dy * dy <= r2 then
+			ns.Debug(ns.HERBS[id][1] .. " picked at a known spot")
+			return
+		end
+	end
+	HerbRingsFound[zone] = HerbRingsFound[zone] or {}
+	table.insert(HerbRingsFound[zone], {
+		math.floor(x * 10000 + 0.5) / 10000, math.floor(y * 10000 + 0.5) / 10000, id,
+	})
+	Print("new " .. ns.HERBS[id][1] .. " spot saved (not in Questie). /hrings forget removes it.")
+	dirty = true
+	Refresh(true)
+end
+
+-- Remove own finds near you, or all of them. Returns how many.
+local function ForgetFinds(all)
+	local n = 0
+	if all then
+		for _, list in pairs(HerbRingsFound) do n = n + #list end
+		wipe(HerbRingsFound)
+	else
+		local x, y, zone, w, h = PlayerPos()
+		local list = x and HerbRingsFound[zone]
+		if not list then return 0 end
+		local r2 = FORGET_YARDS * FORGET_YARDS
+		for i = #list, 1, -1 do
+			local dx, dy = (list[i][1] - x) * w, (list[i][2] - y) * h
+			if dx * dx + dy * dy <= r2 then
+				table.remove(list, i)
+				n = n + 1
+			end
+		end
+		if #list == 0 then HerbRingsFound[zone] = nil end
+	end
+	dirty = true
+	return n
+end
+
+local function CountFinds()
+	local total, here = 0, 0
+	local _, _, zone = HBD:GetPlayerZonePosition()
+	for z, list in pairs(HerbRingsFound) do
+		total = total + #list
+		if z == zone then here = #list end
+	end
+	return here, total
+end
+
+-- Herb Gathering: the cast's target is the herb's name.
+local function OnSpellcastSent(unit, target, castGUID)
+	pendingCast = nil
+	if unit ~= "player" then return end
+	if IsSecret(target) or IsSecret(castGUID) then ns.Debug("cast target hidden, using loot instead"); return end
+	if type(target) ~= "string" then return end
+	local id = ns.HerbIDForName(target)
+	if id then pendingCast = { id = id, guid = castGUID } end
+end
+
+local function OnSpellcastSucceeded(unit, castGUID)
+	if unit ~= "player" or not pendingCast or IsSecret(castGUID) then return end
+	if castGUID == pendingCast.guid then
+		local id = pendingCast.id
+		pendingCast = nil
+		RecordFind(id)
+	end
+end
+
+-- Fallback when the cast target isn't readable: the loot window's source GUID
+-- (GameObject-0-server-instance-zone-objectID-spawn) names the herb object.
+local function OnLootOpened()
+	if not (GetLootSourceInfo and GetNumLootItems) then return end
+	for i = 1, GetNumLootItems() do
+		local ok, guid = pcall(GetLootSourceInfo, i)
+		if ok and not IsSecret(guid) and type(guid) == "string" then
+			local kind, _, _, _, _, objectID = strsplit("-", guid)
+			if kind == "GameObject" and objectID then
+				RecordFind(ns.HERB_OBJECTS[tonumber(objectID)])
+			end
+			return
+		end
+	end
+end
+
+---------------------------------------------------------------------------
 -- Slash commands
 ---------------------------------------------------------------------------
 local function OnOff(v)
@@ -402,6 +511,8 @@ local function Status()
 		OnOff(db.showGray), OnOff(db.showUnknown), OnOff(db.tooltip)))
 	Print(string.format("size %d, alpha %.2f, radius %d yd | bands: yellow +%d, green +%d, gray +%d",
 		db.size, db.alpha, db.radius, db.thresholds.yellow, db.thresholds.green, db.thresholds.gray))
+	local here, total = CountFinds()
+	Print(string.format("your finds %s: %d in this zone, %d in total", OnOff(db.useFinds), here, total))
 end
 
 local function Help()
@@ -411,12 +522,14 @@ local function Help()
 	print("  red, orange, yellow, green, gray, unknown on|off - show/hide a colour")
 	print("  hover on|off - ring tooltips")
 	print("  tooltip on|off - world tooltip colouring")
+	print("  finds on|off - save herbs you pick that Questie doesn't have")
+	print("  forget - remove your finds near you (forget all: every zone)")
 	print("  size <px>, alpha <0-1>, radius <yards>")
 	print("  bands <yellow> <green> <gray> - default 25 50 100")
 	print("  status, reset")
 end
 
-local SHOW_KEYS = { red = "showRed", orange = "showOrange", yellow = "showYellow", green = "showGreen", gray = "showGray", grey = "showGray", unknown = "showUnknown", tooltip = "tooltip", hover = "ringTooltip", debug = "debug" }
+local SHOW_KEYS = { red = "showRed", orange = "showOrange", yellow = "showYellow", green = "showGreen", gray = "showGray", grey = "showGray", unknown = "showUnknown", tooltip = "tooltip", hover = "ringTooltip", finds = "useFinds", debug = "debug" }
 
 SLASH_HERBRINGS1 = "/herbrings"
 SLASH_HERBRINGS2 = "/hrings"
@@ -442,6 +555,9 @@ SlashCmdList.HERBRINGS = function(msg)
 		local key = SHOW_KEYS[cmd]
 		if a == "on" then db[key] = true elseif a == "off" then db[key] = false else db[key] = not db[key] end
 		Print(cmd .. " " .. OnOff(db[key]))
+		if key == "useFinds" then dirty = true end
+	elseif cmd == "forget" then
+		Print(string.format("removed %d of your finds", ForgetFinds(a == "all")))
 	elseif cmd == "size" and tonumber(a) then
 		db.size = math.max(6, math.min(64, tonumber(a)))
 	elseif cmd == "alpha" and tonumber(a) then
@@ -474,9 +590,10 @@ end
 
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("PLAYER_LOGIN")
-frame:SetScript("OnEvent", function(_, event)
+frame:SetScript("OnEvent", function(_, event, ...)
 	if event == "PLAYER_LOGIN" then
 		HerbRingsDB = HerbRingsDB or {}
+		HerbRingsFound = type(HerbRingsFound) == "table" and HerbRingsFound or {} -- own finds, kept apart so a settings reset leaves them
 		db = HerbRingsDB
 		-- default ring size changed 18 -> 10 (0.7.0) -> 12 (0.7.1); follow it unless set by hand
 		if not db.migratedSize12 and (db.size == 18 or db.size == 10) then db.size = 12 end
@@ -497,12 +614,21 @@ frame:SetScript("OnEvent", function(_, event)
 		frame:RegisterEvent("SKILL_LINES_CHANGED")
 		frame:RegisterEvent("CHAT_MSG_SKILL")
 		frame:RegisterEvent("PLAYER_ENTERING_WORLD")
+		frame:RegisterEvent("UNIT_SPELLCAST_SENT")
+		frame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
+		frame:RegisterEvent("LOOT_OPENED")
 		HBD.RegisterCallback(ADDON, "PlayerZoneChanged", function() Refresh() end)
 		C_Timer.NewTicker(1, function() Refresh() end)
 		Refresh(true)
 	elseif event == "PLAYER_ENTERING_WORLD" then
 		dirty = true
 		Refresh()
+	elseif event == "UNIT_SPELLCAST_SENT" then
+		OnSpellcastSent(...)
+	elseif event == "UNIT_SPELLCAST_SUCCEEDED" then
+		OnSpellcastSucceeded(...)
+	elseif event == "LOOT_OPENED" then
+		OnLootOpened()
 	else -- SKILL_LINES_CHANGED, CHAT_MSG_SKILL
 		UpdateSkill()
 	end

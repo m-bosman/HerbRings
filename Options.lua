@@ -225,6 +225,9 @@ local function Build()
 	Checkbox(c, "Colour herb names in world tooltips", 16, y,
 		function() return db.tooltip end, function(v) db.tooltip = v end,
 		"Herbs you mouse over in the world. The minimap's own tooltip can't be changed by addons.")
+	Checkbox(c, "Save herbs you find that Questie doesn't have", 320, y,
+		function() return db.useFinds end, function(v) db.useFinds = v; ns.Rescan() end,
+		"When you pick a herb where no ring is, that spot gets a ring too. /hrings forget removes finds near you.")
 	y = y - 40
 
 	Slider(c, "Ring size", 24, y, 180, 6, 40, 1,

@@ -41,6 +41,7 @@ local QUESTIE_HERB_OBJECTS = {
 	[176588] = 429,                                              -- Icecap
 	[176589] = 431,                                              -- Black Lotus
 }
+ns.HERB_OBJECTS = QUESTIE_HERB_OBJECTS
 
 -- uiMapID -> Questie area ID (QuestieDB support/Forever/Zones/uiMapIdToAreaId.lua),
 -- used when Questie's own ZoneDB isn't reachable.
@@ -86,6 +87,25 @@ sources[#sources + 1] = {
 						add(x / 100, y / 100, nodeID) -- Questie uses 0..100
 					end
 				end
+			end
+		end
+	end,
+}
+
+-- Herbs you picked at spots the other sources don't have (saved by Core.lua).
+-- HerbRingsFound = { [uiMapID] = { {x, y, nodeID}, ... } }, x/y 0..1.
+sources[#sources + 1] = {
+	key = "found",
+	name = "your finds",
+	available = function()
+		return ns.db and ns.db.useFinds and type(_G.HerbRingsFound) == "table"
+	end,
+	each = function(zone, add)
+		local list = _G.HerbRingsFound[zone]
+		if type(list) ~= "table" then return end
+		for _, p in ipairs(list) do
+			if type(p[1]) == "number" and type(p[2]) == "number" and p[3] then
+				add(p[1], p[2], p[3])
 			end
 		end
 	end,

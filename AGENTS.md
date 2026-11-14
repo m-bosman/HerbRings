@@ -15,8 +15,8 @@ Forever is not Classic Era and not Retail. Don't assume either API. If unsure, c
 | `HerbRings.toc` | Load order, metadata. `Version` is `@project-version@`, filled in by the packager |
 | `Difficulty.lua` | Colour logic, no WoW API |
 | `Data.lua` | Herbs: name, variants, required skill, keyed by GatherMate2 node ID |
-| `Sources.lua` | Reads spawns from QuestieDB (`ObjectDB.spawns(objectID)` → `{[areaId] = {{x, y}}}`, 0..100) |
-| `Core.lua` | Rings, tooltips, settings defaults/migrations, slash commands |
+| `Sources.lua` | Reads spawns from QuestieDB (`ObjectDB.spawns(objectID)` → `{[areaId] = {{x, y}}}`, 0..100), plus your own finds (`HerbRingsFound`) |
+| `Core.lua` | Rings, tooltips, own finds (saved on Herb Gathering / loot), settings defaults/migrations, slash commands |
 | `Options.lua` | Esc > Options > AddOns panel |
 | `Libs/` | LibStub, CallbackHandler, HereBeDragons (embedded, committed) |
 | `Media/` | `Ring.tga` (minimap ring), `Icon.tga` (AddOns list icon). `mkicon.py` regenerates the icon and logo |

@@ -4,7 +4,7 @@
 ## Author: marijn
 ## Version: @project-version@
 ## OptionalDeps: Questie, QuestieDB
-## SavedVariables: HerbRingsDB
+## SavedVariables: HerbRingsDB, HerbRingsFound
 ## IconTexture: Interface\AddOns\HerbRings\Media\Icon.tga
 
 Libs\LibStub\LibStub.lua
