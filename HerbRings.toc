@@ -1,0 +1,19 @@
+## Interface: 16001
+## Title: HerbRings
+## Notes: Herb spawn points on the minimap, coloured by skill-up chance. Needs Questie.
+## Author: marijn
+## Version: 0.7.2
+## OptionalDeps: Questie, QuestieDB
+## SavedVariables: HerbRingsDB
+## IconTexture: Interface\AddOns\HerbRings\Media\Icon.tga
+
+Libs\LibStub\LibStub.lua
+Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
+Libs\HereBeDragons\HereBeDragons-2.0.lua
+Libs\HereBeDragons\HereBeDragons-Pins-2.0.lua
+
+Difficulty.lua
+Data.lua
+Sources.lua
+Core.lua
+Options.lua
