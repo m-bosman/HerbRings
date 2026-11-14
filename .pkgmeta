@@ -12,3 +12,5 @@ ignore:
   - Media/mkicon.py
   - Media/icon_preview.png
   - Media/logo_400.png
+  - .luacheckrc
+  - spec

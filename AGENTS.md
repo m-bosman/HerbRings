@@ -19,6 +19,7 @@ Forever is not Classic Era and not Retail. Don't assume either API. If unsure, c
 | `Core.lua` | Rings, tooltips, own finds (saved on Herb Gathering / loot), settings defaults/migrations, slash commands |
 | `Options.lua` | Esc > Options > AddOns panel |
 | `Libs/` | LibStub, CallbackHandler, HereBeDragons (embedded, committed) |
+| `spec/` | Tests (`busted`) and the fake WoW API they run against |
 | `Media/` | `Ring.tga` (minimap ring), `Icon.tga` (AddOns list icon). `mkicon.py` regenerates the icon and logo |
 
 ## Things that bite
@@ -26,8 +27,19 @@ Forever is not Classic Era and not Retail. Don't assume either API. If unsure, c
 - **Minimap tooltip text is a secret value.** Addons can't read or change it. Always check `issecretvalue`/`canaccessvalue` before touching tooltip text (see `ReadText` in `Core.lua`).
 - **Options panel taint.** No OnShow/OnHide/OnCommit/OnRefresh/OnDefault handlers on the panel. Addon code running while the game's Options window opens or closes can block Log Out / Exit. Build once at login, refresh via `ns.RefreshOptions()`.
 - **Changing a default.** `CopyDefaults` only fills missing keys, so existing users keep the old value. To move people on the old default, add a one-time migration in `PLAYER_LOGIN` (see `migratedSize12`, `migratedRadius400`).
-- **No Lua interpreter on the dev machine.** Code can't be run locally. Read changes carefully and test in game.
+- **Only some things can be tested locally.** `busted` runs against a fake WoW API (`spec/wow.lua`). Tooltips, secret values, the options panel and what Forever's events actually pass still need testing in game.
 - **`.toc` changes (icon, metadata) need a full game restart**, not `/reload`.
+
+## Checks
+
+Needs Lua 5.1 with `luacheck` and `busted` (`sudo apt install lua5.1 luarocks`, then `sudo luarocks --lua-version 5.1 install luacheck busted`).
+
+```
+luacheck .   # unused/misspelled variables, stray globals. WoW globals are listed in .luacheckrc
+busted       # tests in spec/, against the fake WoW API in spec/wow.lua
+```
+
+A new WoW global in the code needs adding to `.luacheckrc`, and to `spec/wow.lua` if it runs at load or in a tested path.
 
 ## Testing in game
 
@@ -82,7 +94,7 @@ Secrets go in GitHub > Settings > Secrets and variables > Actions. A target with
 
 ### What goes in the zip
 
-`.pkgmeta` controls it. Left out: `.github`, `.gitignore`, `README.md`, `AGENTS.md`, and the icon tooling (`Media/mkicon.py`, `Media/icon_preview.png`, `Media/logo_400.png`).
+`.pkgmeta` controls it. Left out: `.github`, `.gitignore`, `README.md`, `AGENTS.md`, `.luacheckrc`, `spec/`, and the icon tooling (`Media/mkicon.py`, `Media/icon_preview.png`, `Media/logo_400.png`).
 
 ## Writing style
 
