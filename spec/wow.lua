@@ -39,6 +39,7 @@ function M.load(opts)
 		zoneSize = { 1000, 1000 },               -- yards, so 0.001 = 1 yard
 		loot = nil,                              -- GUID GetLootSourceInfo returns
 		time = 0,
+		findHerbs = true,                        -- Find Herbs tracking on
 	}
 
 	_G.HerbRingsDB = opts.db
@@ -66,6 +67,13 @@ function M.load(opts)
 	_G.GameTooltip = NewObject()
 	_G.GetNumLootItems = function() return h.loot and 1 or 0 end
 	_G.GetLootSourceInfo = function() return h.loot, 1 end
+	_G.C_Minimap = {
+		GetNumTrackingTypes = function() return 2 end,
+		GetTrackingInfo = function(i)
+			if i == 1 then return { name = "Find Herbs", spellID = 2383, active = h.findHerbs, type = "spell" } end
+			return { name = "Repair", active = true, type = "other" }
+		end,
+	}
 	_G.ObjectDB = { spawns = function(id) return (opts.spawns or {})[id] end }
 
 	local HBD = {

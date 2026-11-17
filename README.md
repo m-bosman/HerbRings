@@ -15,7 +15,7 @@ Puts a coloured ring on every herb spawn point on your minimap, coloured by how 
 
 Hover a ring to see which herb it is and what it needs. Herbs you mouse over in the world get the same colouring in their tooltip.
 
-The rings show where herbs *can* spawn, not what's up right now. Forever doesn't let addons read the minimap's herb dots, so the game's own tracking dot is still what tells you a herb is there. Find Herbs plus a ring around the dot is the idea.
+The rings show where herbs *can* spawn, not what's up right now. Forever doesn't let addons read the minimap's herb dots, so the game's own tracking dot is still what tells you a herb is there. Find Herbs plus a ring around the dot is the idea, so the rings only show while Find Herbs is on. A setting shows them all the time instead.
 
 ## Requirements
 
@@ -27,6 +27,7 @@ Now and then a herb grows where Questie has no spawn point. When you pick one th
 
 Esc > Options > AddOns > HerbRings, or `/hrings config`.
 
+- Show rings without Find Herbs on
 - Ring size, opacity and range
 - Change any of the colours, or hide a colour entirely (gray and red are the usual ones to hide)
 - Every herb listed by required skill: hide it, or give it its own colour

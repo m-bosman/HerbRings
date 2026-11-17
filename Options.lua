@@ -228,6 +228,10 @@ local function Build()
 	Checkbox(c, "Save herbs you find that Questie doesn't have", 320, y,
 		function() return db.useFinds end, function(v) db.useFinds = v; ns.Rescan() end,
 		"When you pick a herb where no ring is, that spot gets a ring too. /hrings forget removes finds near you.")
+	y = y - 28
+	Checkbox(c, "Show rings without Find Herbs on", 16, y,
+		function() return db.alwaysShow end, function(v) db.alwaysShow = v end,
+		"Normally the rings only show while Find Herbs tracking is on.")
 	y = y - 40
 
 	Slider(c, "Ring size", 24, y, 180, 6, 40, 1,

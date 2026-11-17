@@ -13,7 +13,7 @@ globals = {
 -- WoW API and other addons' globals the addon reads
 read_globals = {
 	"LibStub", "CreateFrame", "UIParent", "GameTooltip", "GameTooltip_Hide", "Minimap", "MinimapCluster",
-	"Settings", "C_AddOns", "GetAddOnMetadata", "C_Timer", "C_SkillInfo",
+	"Settings", "C_AddOns", "GetAddOnMetadata", "C_Timer", "C_SkillInfo", "C_Minimap",
 	"GetProfessions", "GetProfessionInfo", "GetNumSkillLines", "GetSkillLineInfo",
 	"GetTime", "GetLootSourceInfo", "GetNumLootItems", "TooltipDataProcessor",
 	"hooksecurefunc", "issecretvalue", "canaccessvalue",

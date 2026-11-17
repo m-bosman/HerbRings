@@ -154,3 +154,30 @@ describe("own finds", function()
 		assert.equal(1, #addon.found())
 	end)
 end)
+
+describe("Find Herbs", function()
+	local addon
+	before_each(function()
+		addon = wow.load({ spawns = { [1618] = { [ELWYNN] = { { 20, 20 } } } } })
+	end)
+
+	it("shows rings while Find Herbs is on", function()
+		assert.equal(1, addon.pins)
+	end)
+
+	it("hides rings when Find Herbs goes off, and brings them back", function()
+		addon.findHerbs = false
+		addon.fire("MINIMAP_UPDATE_TRACKING")
+		assert.equal(0, addon.pins)
+		addon.findHerbs = true
+		addon.fire("MINIMAP_UPDATE_TRACKING")
+		assert.equal(1, addon.pins)
+	end)
+
+	it("shows rings without Find Herbs when set to always", function()
+		addon.findHerbs = false
+		addon.fire("MINIMAP_UPDATE_TRACKING")
+		addon.slash("always on")
+		assert.equal(1, addon.pins)
+	end)
+end)

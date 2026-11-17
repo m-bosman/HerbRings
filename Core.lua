@@ -4,11 +4,13 @@ local HBD = LibStub("HereBeDragons-2.0")
 local Pins = LibStub("HereBeDragons-Pins-2.0")
 
 local HERBALISM_SKILL_LINE = 182
+local FIND_HERBS_SPELL = 2383
 local RING_TEXTURE = "Interface\\AddOns\\HerbRings\\Media\\Ring.tga"
 local ZONE_RESCAN_SECONDS = 300 -- spawn data is static; an occasional rescan is plenty
 
 local DEFAULTS = {
 	enabled     = true,
+	alwaysShow  = false, -- show rings even when Find Herbs is off
 	showRed     = true,
 	showOrange  = true,
 	showYellow  = true,
@@ -119,6 +121,26 @@ local function IsHidden(diff, id)
 end
 
 ---------------------------------------------------------------------------
+-- Find Herbs tracking
+---------------------------------------------------------------------------
+-- GetTrackingInfo returns a table on newer clients, separate values on older ones.
+local function TrackingInfo(i)
+	local a, _, c, _, _, f = C_Minimap.GetTrackingInfo(i)
+	if type(a) == "table" then return a.name, a.active, a.spellID end
+	return a, c, f
+end
+
+-- Find Herbs is on. True when the client has no tracking API (can't tell).
+local function FindHerbsOn()
+	if not (C_Minimap and C_Minimap.GetNumTrackingTypes and C_Minimap.GetTrackingInfo) then return true end
+	for i = 1, C_Minimap.GetNumTrackingTypes() do
+		local ok, name, on, spellID = pcall(TrackingInfo, i)
+		if ok and (spellID == FIND_HERBS_SPELL or name == "Find Herbs") then return on and true or false end
+	end
+	return false
+end
+
+---------------------------------------------------------------------------
 -- Minimap rings
 ---------------------------------------------------------------------------
 -- Ring hover tooltip. The minimap's own tooltip text is a secret value on Forever
@@ -202,6 +224,7 @@ end
 
 local function Refresh(force)
 	if not db.enabled then ClearRings(); return end
+	if not (db.alwaysShow or FindHerbsOn()) then ClearRings(); lastX = nil; return end
 
 	local x, y, zone = HBD:GetPlayerZonePosition()
 	if not (x and y and zone) then ClearRings(); lastZone = nil; return end
@@ -502,8 +525,8 @@ end
 local function Status()
 	local n = 0
 	for _ in pairs(active) do n = n + 1 end
-	Print(string.format("enabled %s | Herbalism %s%s | %d herb spots in zone, %d rings shown",
-		OnOff(db.enabled), tostring(skillRank or "not learned"),
+	Print(string.format("enabled %s, without Find Herbs %s | Herbalism %s%s | %d herb spots in zone, %d rings shown",
+		OnOff(db.enabled), OnOff(db.alwaysShow), tostring(skillRank or "not learned"),
 		(skillMod and skillMod ~= 0) and (" (+" .. skillMod .. ")") or "", #zoneSpots, n))
 	Print("data: " .. (#zoneSources > 0 and table.concat(zoneSources, ", ") or "|cffc04040Questie not found|r (HerbRings needs Questie/QuestieDB for herb spots)"))
 	Print(string.format("show red %s, orange %s, yellow %s, green %s, gray %s, unknown %s | tooltip %s",
@@ -519,6 +542,7 @@ local function Help()
 	Print("/hrings ...")
 	print("  config - settings")
 	print("  toggle - rings on/off")
+	print("  always on|off - show rings without Find Herbs on")
 	print("  red, orange, yellow, green, gray, unknown on|off - show/hide a colour")
 	print("  hover on|off - ring tooltips")
 	print("  tooltip on|off - world tooltip colouring")
@@ -529,7 +553,7 @@ local function Help()
 	print("  status, reset")
 end
 
-local SHOW_KEYS = { red = "showRed", orange = "showOrange", yellow = "showYellow", green = "showGreen", gray = "showGray", grey = "showGray", unknown = "showUnknown", tooltip = "tooltip", hover = "ringTooltip", finds = "useFinds", debug = "debug" }
+local SHOW_KEYS = { red = "showRed", orange = "showOrange", yellow = "showYellow", green = "showGreen", gray = "showGray", grey = "showGray", unknown = "showUnknown", tooltip = "tooltip", hover = "ringTooltip", always = "alwaysShow", finds = "useFinds", debug = "debug" }
 
 SLASH_HERBRINGS1 = "/herbrings"
 SLASH_HERBRINGS2 = "/hrings"
@@ -617,6 +641,7 @@ frame:SetScript("OnEvent", function(_, event, ...)
 		frame:RegisterEvent("UNIT_SPELLCAST_SENT")
 		frame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
 		frame:RegisterEvent("LOOT_OPENED")
+		frame:RegisterEvent("MINIMAP_UPDATE_TRACKING")
 		HBD.RegisterCallback(ADDON, "PlayerZoneChanged", function() Refresh() end)
 		C_Timer.NewTicker(1, function() Refresh() end)
 		Refresh(true)
@@ -629,6 +654,8 @@ frame:SetScript("OnEvent", function(_, event, ...)
 		OnSpellcastSucceeded(...)
 	elseif event == "LOOT_OPENED" then
 		OnLootOpened()
+	elseif event == "MINIMAP_UPDATE_TRACKING" then
+		Refresh()
 	else -- SKILL_LINES_CHANGED, CHAT_MSG_SKILL
 		UpdateSkill()
 	end

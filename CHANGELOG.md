@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.8.0
+- Rings only show while Find Herbs is on. Tick "Show rings without Find Herbs on" in the settings (or `/hrings always on`) to always show them.
 - Herbs you pick at a spot Questie doesn't have are saved and get a ring too. Turn off in the settings or with `/hrings finds off`.
 - `/hrings forget` removes your finds near you, `/hrings forget all` removes them all.
 
